@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>귀화면접 한국 고대사</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafaf8;
+  --white: #ffffff;
+  --border: #e8e6e0;
+  --text: #18181b;
+  --text-2: #71717a;
+  --text-3: #a1a1aa;
+  --accent: #dc2626;
+  --accent-bg: #fff5f5;
+  --yellow: #d97706;
+  --yellow-bg: #fffbeb;
+  --mono: 'IBM Plex Mono', monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── LAYOUT ─── */
+.wrap { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+
+/* ─── HEADER ─── */
+header {
+  padding: 64px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  max-width: 800px;
+  margin: 0 auto;
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+header h1 {
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 10px;
+}
+header p { font-size: 14px; color: var(--text-2); }
+
+/* ─── SECTION TITLE ─── */
+.section-title {
+  padding: 48px 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-title h2 { font-size: 16px; font-weight: 700; }
+.section-title span {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* ─── ERA ACCORDION ─── */
+.eras { display: flex; flex-direction: column; gap: 1px; padding-bottom: 64px; }
+
+.era {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.era + .era { margin-top: 6px; }
+
+.era-trigger {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+  padding: 0;
+  gap: 0;
+}
+
+.era-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #fff;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.era-label { padding: 16px 18px; }
+.era-label-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.era-label-top strong { font-size: 15px; font-weight: 700; }
+.badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+.badge-red { background: var(--accent-bg); color: var(--accent); }
+.badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+.era-label-sub { font-size: 12px; color: var(--text-3); font-family: var(--mono); }
+
+.era-arrow {
+  padding: 0 18px;
+  font-size: 14px;
+  color: var(--text-3);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.era.open .era-arrow { transform: rotate(180deg); }
+
+/* ─── ERA BODY ─── */
+.era-body {
+  display: none;
+  padding: 20px 20px 20px 58px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.era.open .era-body { display: block; }
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 28px;
+}
+@media (max-width: 560px) {
+  .grid2 { grid-template-columns: 1fr; }
+  .era-body { padding-left: 20px; }
+  .era-num { min-width: 36px; }
+}
+
+.field-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.field-value {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.7;
+}
+.field-value strong { font-weight: 700; }
+
+/* people tags */
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  gap: 1px;
+}
+.tag b { font-size: 13px; font-weight: 700; }
+.tag small { color: var(--text-3); font-size: 11px; }
+
+/* chips */
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.chip.r { background: var(--accent-bg); border-color: #fecaca; color: var(--accent); font-weight: 600; }
+
+/* tip box */
+.tip {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: var(--yellow-bg);
+  border-left: 3px solid var(--yellow);
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #78350f;
+}
+.tip-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--yellow);
+  margin-bottom: 6px;
+}
+
+/* era colors */
+.c1 { background: #78350f; }
+.c2 { background: #991b1b; }
+.c3 { background: #1e40af; }
+.c4 { background: #5b21b6; }
+.c5 { background: #065f46; }
+.c6 { background: #1e3a5f; }
+.c7 { background: #7f1d1d; }
+
+/* ─── QUIZ ─── */
+.quiz-section {
+  background: #18181b;
+  padding: 56px 0 64px;
+}
+.quiz-section .wrap {}
+.quiz-head { margin-bottom: 28px; }
+.quiz-head h2 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.quiz-head p { font-size: 12px; color: #71717a; font-family: var(--mono); }
+
+.quiz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px;
+}
+.qcard {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  padding: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.qcard:hover { border-color: #52525b; }
+.qcard.on { border-color: var(--accent); }
+.q-text { font-size: 12px; color: #a1a1aa; line-height: 1.5; margin-bottom: 8px; }
+.q-ans {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  min-height: 20px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.qcard.on .q-ans { opacity: 1; }
+.q-hint { font-family: var(--mono); font-size: 10px; color: #3f3f46; margin-top: 6px; }
+.qcard.on .q-hint { display: none; }
+
+/* ─── ACTIVISTS ─── */
+.activists-section { padding: 48px 0 72px; }
+.act-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px;
+}
+.acard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  transition: box-shadow 0.15s;
+}
+.acard:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.acard-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.acard-key { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 5px; }
+.acard-detail { font-size: 12px; color: var(--text-2); line-height: 1.55; }
+
+/* ─── FOOTER ─── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 20px 24px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* ─── ANIMATION ─── */
+@keyframes up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.era { animation: up 0.3s ease both; }
+.era:nth-child(1){animation-delay:.04s}
+.era:nth-child(2){animation-delay:.08s}
+.era:nth-child(3){animation-delay:.12s}
+.era:nth-child(4){animation-delay:.16s}
+.era:nth-child(5){animation-delay:.20s}
+.era:nth-child(6){animation-delay:.24s}
+.era:nth-child(7){animation-delay:.28s}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">귀화면접 대비 · 한국 고대사</div>
+  <h1>나라별 핵심 정리</h1>
+  <p>고조선부터 조선까지 · 왕, 인물, 공헌, 시험 포인트</p>
+</header>
+
+<div class="wrap">
+  <div class="section-title">
+    <h2>타임라인</h2>
+    <span>클릭하면 펼쳐집니다</span>
+  </div>
+
+  <div class="eras">
+
+    <!-- 01 고조선 -->
+    <div class="era open">
+      <button class="era-trigger" onclick="tog(this)">
+        <div class="era-num c1">01</div>
+        <div class="era-label">
+          <div class="era-label-top">
+            <strong>고조선</strong>
+            <span class="badge badge-red">필수 ★★★</span>
+          </div>
+          <div class="era-label-sub">기원전 2333년경 · 건국: 단군왕검</div>
+        </div>
+        <div class="era-arrow">▾</div>
+      </button>
+      <div class="era-body">
+        <div class="grid2">
+          <div>
+            <div class="field-label">핵심 인물</div>
+            <div class="tags">
+              <div class="tag"><b>단군왕검</b><small>건국자 · 홍익인간</small></div>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">관련 기록</div>
+            <div class="field-value">📖 <strong>삼국유사</strong> — 고조선 이야기가 처음 실린 책 (일연 저술)</div>
+          </div>
+          <div>
+            <div class="field-label">핵심 키워드</div>
+            <div class="chips">
+              <span class="chip r">단군신화</span>
+              <span class="chip r">홍익인간</span>
+              <span class="chip">곰과 호랑이</span>
+              <span class="chip">환웅</span>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">오늘날 기념</div>
+            <div class="field-value"><strong>개천절</strong> (10월 3일) — 단군이 고조선을 세운 날</div>
+          </div>
+        </div>
+        <div class="tip">
+          <div class="tip-label">시험 포인트</div>
+          "고조선 이야기가 처음 실린 책은?" → <strong>삼국유사</strong><br>
+          "우리 민족의 시조 신화는?" → <strong>단군신화</strong><br>
+          "개천절은 무엇을 기념?" → <strong>단군이 고조선을 세운 날</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 고구려 -->
+    <div class="era open">
+      <button class="era-trigger" onclick="tog(this)">
+        <div class="era-num c2">02</div>
+        <div class="era-label">
+          <div class="era-label-top">
+            <strong>고구려</strong>
+            <span class="badge badge-red">필수 ★★★</span>
+          </div>
+          <div class="era-label-sub">기원전 37년 · 건국: 주몽</div>
+        </div>
+        <div class="era-arrow">▾</div>
+      </button>
+      <div class="era-body">
+        <div class="grid2">
+          <div>
+            <div class="field-label">주요 왕 · 인물</div>
+            <div class="tags">
+              <div class="tag"><b>주몽</b><small>건국자</small></div>
+              <div class="tag"><b>광개토대왕</b><small>영토 최대 확장</small></div>
+              <div class="tag"><b>장수왕</b><small>평양 천도 · 남진</small></div>
+              <div class="tag"><b>대조영</b><small>발해 건국</small></div>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">주요 업적</div>
+            <div class="field-value">
+              · <strong>광개토대왕</strong> — 북진정책, 만주까지 영토 확장<br>
+              · <strong>장수왕</strong> — 수도 평양 천도, 남진 정책<br>
+              · <strong>대조영</strong> — 고구려 멸망 후 발해 건국 (698)
+            </div>
+          </div>
+          <div>
+            <div class="field-label">핵심 키워드</div>
+            <div class="chips">
+              <span class="chip r">주몽</span>
+              <span class="chip r">광개토대왕</span>
+              <span class="chip r">대조영 · 발해</span>
+              <span class="chip">북진정책</span>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">⚠️ 혼동 주의</div>
+            <div class="field-value">Korea·Corée 어원 →<br>고구려 ❌ &nbsp;<strong>고려 ✅</strong></div>
+          </div>
+        </div>
+        <div class="tip">
+          <div class="tip-label">시험 포인트</div>
+          "고구려를 세운 사람은?" → <strong>주몽</strong><br>
+          "북진정책으로 영토를 넓힌 왕은?" → <strong>광개토대왕</strong><br>
+          "고구려 유민이 세운 나라는?" → <strong>발해</strong> (건국: 대조영)
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 백제 -->
+    <div class="era">
+      <button class="era-trigger" onclick="tog(this)">
+        <div class="era-num c3">03</div>
+        <div class="era-label">
+          <div class="era-label-top">
+            <strong>백제</strong>
+            <span class="badge badge-yellow">보통 ★★☆</span>
+          </div>
+          <div class="era-label-sub">기원전 18년 · 건국: 온조왕 (주몽의 아들)</div>
+        </div>
+        <div class="era-arrow">▾</div>
+      </button>
+      <div class="era-body">
+        <div class="grid2">
+          <div>
+            <div class="field-label">주요 왕 · 인물</div>
+            <div class="tags">
+              <div class="tag"><b>온조왕</b><small>건국자 · 주몽의 아들</small></div>
+              <div class="tag"><b>근초고왕</b><small>4세기 전성기</small></div>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">특징 · 공헌</div>
+            <div class="field-value">
+              · 삼국 중 <strong>가장 먼저 전성기</strong> (해상무역)<br>
+              · 일본에 불교 · 문화 전파<br>
+              · 근초고왕 때 영토 최대
+            </div>
+          </div>
+        </div>
+        <div class="tip">
+          <div class="tip-label">시험 포인트</div>
+          "백제를 세운 사람은?" → <strong>온조왕</strong><br>
+          "온조왕은 누구의 아들인가?" → <strong>주몽의 아들</strong><br>
+          "해상무역으로 가장 먼저 전성기를 맞은 나라는?" → <strong>백제</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 신라 -->
+    <div class="era open">
+      <button class="era-trigger" onclick="tog(this)">
+        <div class="era-num c4">04</div>
+        <div class="era-label">
+          <div class="era-label-top">
+            <strong>신라 → 통일신라</strong>
+            <span class="badge badge-red">필수 ★★★</span>
+          </div>
+          <div class="era-label-sub">기원전 57년 · 건국: 박혁거세 · 삼국통일 676년</div>
+        </div>
+        <div class="era-arrow">▾</div>
+      </button>
+      <div class="era-body">
+        <div class="grid2">
+          <div>
+            <div class="field-label">주요 왕 · 인물</div>
+            <div class="tags">
+              <div class="tag"><b>박혁거세</b><small>건국자</small></div>
+              <div class="tag"><b>진흥왕</b><small>화랑도 · 한강 확보</small></div>
+              <div class="tag"><b>선덕여왕</b><small>첨성대 건립</small></div>
+              <div class="tag"><b>김유신</b><small>삼국통일 공신 장군</small></div>
+              <div class="tag"><b>문무왕</b><small>삼국통일 완성 (676)</small></div>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">주요 업적</div>
+            <div class="field-value">
+              · <strong>진흥왕</strong> — 화랑도 정비, 한강 유역 확보<br>
+              · <strong>선덕여왕</strong> — 첨성대 건립<br>
+              · <strong>문무왕</strong> — 삼국통일 완성 (676년)<br>
+              · 불국사 · 석굴암 · 다보탑 · 석가탑
+            </div>
+          </div>
+          <div>
+            <div class="field-label">문화유산</div>
+            <div class="chips">
+              <span class="chip r">불국사</span>
+              <span class="chip r">석굴암</span>
+              <span class="chip r">첨성대</span>
+              <span class="chip r">화랑도</span>
+              <span class="chip">다보탑 · 석가탑</span>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">삼국통일 과정</div>
+            <div class="field-value">나당연합 → 백제 멸망(660) → 고구려 멸망(668) → 당 축출 → <strong>676년 완성</strong></div>
+          </div>
+        </div>
+        <div class="tip">
+          <div class="tip-label">시험 포인트</div>
+          "신라를 세운 사람은?" → <strong>박혁거세</strong><br>
+          "화랑도 정비 + 한강 확보한 왕은?" → <strong>진흥왕</strong><br>
+          "첨성대를 세운 왕은?" → <strong>선덕여왕</strong><br>
+          "삼국통일을 완성한 왕은?" → <strong>문무왕</strong> &nbsp;|&nbsp; "삼국통일 공신 장군은?" → <strong>김유신</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 발해 -->
+    <div class="era">
+      <button class="era-trigger" onclick="tog(this)">
+        <div class="era-num c5">05</div>
+        <div class="era-label">
+          <div class="era-label-top">
+            <strong>발해</strong>
+            <span class="badge badge-yellow">보통 ★★☆</span>
+          </div>
+          <div class="era-label-sub">698년 · 건국: 대조영 (고구려 유민)</div>
+        </div>
+        <div class="era-arrow">▾</div>
+      </button>
+      <div class="era-body">
+        <div class="grid2">
+          <div>
+            <div class="field-label">핵심 인물</div>
+            <div class="tags">
+              <div class="tag"><b>대조영</b><small>고구려 유민 이끌고 건국</small></div>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">특징</div>
+            <div class="field-value">
+              · 신라와 같은 시기 → <strong>남북국시대</strong><br>
+              · 고구려 문화 계승 · <strong>해동성국</strong>으로 번성
+            </div>
+          </div>
+        </div>
+        <div class="tip">
+          <div class="tip-label">시험 포인트</div>
+          "발해를 세운 사람은?" → <strong>대조영</strong><br>
+          "발해는 어느 나라 유민이 세웠나?" → <strong>고구려 유민</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 고려 -->
+    <div class="era open">
+      <button class="era-trigger" onclick="tog(this)">
+        <div class="era-num c6">06</div>
+        <div class="era-label">
+          <div class="era-label-top">
+            <strong>고려</strong>
+            <span class="badge badge-red">필수 ★★★</span>
+          </div>
+          <div class="era-label-sub">918년 · 건국: 태조 왕건 · Korea 이름의 기원</div>
+        </div>
+        <div class="era-arrow">▾</div>
+      </button>
+      <div class="era-body">
+        <div class="grid2">
+          <div>
+            <div class="field-label">주요 왕 · 인물</div>
+            <div class="tags">
+              <div class="tag"><b>왕건 (태조)</b><small>고려 건국</small></div>
+              <div class="tag"><b>궁예</b><small>후고구려 건국</small></div>
+              <div class="tag"><b>문익점</b><small>목화씨 도입</small></div>
+              <div class="tag"><b>일연</b><small>삼국유사 저술</small></div>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">주요 업적 · 문화</div>
+            <div class="field-value">
+              · <strong>고려청자</strong> — 비취색 대표 도자기<br>
+              · <strong>팔만대장경</strong> — 몽골 격퇴 기원, 합천 해인사 보관<br>
+              · <strong>직지심체요절</strong> — 세계 최초 금속활자본 (1377)<br>
+              · <strong>문익점</strong> — 목화씨 도입 → 의생활 혁신
+            </div>
+          </div>
+          <div>
+            <div class="field-label">핵심 키워드</div>
+            <div class="chips">
+              <span class="chip r">왕건</span>
+              <span class="chip r">고려청자</span>
+              <span class="chip r">팔만대장경</span>
+              <span class="chip r">직지심체요절</span>
+              <span class="chip">궁예</span>
+              <span class="chip">문익점 · 목화</span>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">Korea 어원</div>
+            <div class="field-value">🌍 <strong>고려(Goryeo)</strong>에서 유래<br>→ Korea, Corée, Corea</div>
+          </div>
+        </div>
+        <div class="tip">
+          <div class="tip-label">시험 포인트</div>
+          "고려를 세운 사람은?" → <strong>태조 왕건</strong> &nbsp;|&nbsp; "후고구려를 세운 왕은?" → <strong>궁예</strong><br>
+          "Korea의 어원이 된 나라는?" → <strong>고려</strong><br>
+          "세계 최초 금속활자본은?" → <strong>직지심체요절</strong><br>
+          "팔만대장경 보관 장소는?" → <strong>합천 해인사</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 조선 -->
+    <div class="era open">
+      <button class="era-trigger" onclick="tog(this)">
+        <div class="era-num c7">07</div>
+        <div class="era-label">
+          <div class="era-label-top">
+            <strong>조선</strong>
+            <span class="badge badge-red">필수 ★★★</span>
+          </div>
+          <div class="era-label-sub">1392년 · 건국: 태조 이성계 · 수도: 한양</div>
+        </div>
+        <div class="era-arrow">▾</div>
+      </button>
+      <div class="era-body">
+        <div class="grid2">
+          <div>
+            <div class="field-label">주요 왕 · 인물</div>
+            <div class="tags">
+              <div class="tag"><b>태조 이성계</b><small>건국 · 한양 천도</small></div>
+              <div class="tag"><b>세종대왕 (4대)</b><small>한글 창제 · 과학 발명</small></div>
+              <div class="tag"><b>이순신</b><small>임진왜란 3대 대첩</small></div>
+              <div class="tag"><b>정약용</b><small>실학자 · 목민심서</small></div>
+              <div class="tag"><b>이황 (퇴계)</b><small>성리학 · 1000원권</small></div>
+              <div class="tag"><b>이이 (율곡)</b><small>10만양병설 · 5000원권</small></div>
+              <div class="tag"><b>신사임당</b><small>율곡 모친 · 5만원권</small></div>
+              <div class="tag"><b>장영실</b><small>자격루 제작</small></div>
+              <div class="tag"><b>김정호</b><small>대동여지도 제작</small></div>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">세종대왕 발명 · 창제</div>
+            <div class="chips" style="margin-bottom:16px;">
+              <span class="chip r">훈민정음(한글)</span>
+              <span class="chip r">측우기</span>
+              <span class="chip r">자격루</span>
+              <span class="chip r">앙부일구</span>
+              <span class="chip">혼천의</span>
+            </div>
+            <div class="field-label">이순신 3대 대첩</div>
+            <div class="chips" style="margin-bottom:16px;">
+              <span class="chip r">한산도대첩</span>
+              <span class="chip r">명량대첩</span>
+              <span class="chip r">노량대첩</span>
+            </div>
+            <div class="field-label">임진왜란 3대 대첩</div>
+            <div class="field-value">
+              한산도 — <strong>이순신</strong><br>
+              행주 — <strong>권율</strong><br>
+              진주 — <strong>김시민</strong>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">주요 법전 · 기록물</div>
+            <div class="field-value">
+              · <strong>경국대전</strong> — 조선 최고 법전 (성종 완성)<br>
+              · <strong>조선왕조실록</strong> — 유네스코 세계기록유산<br>
+              · <strong>동의보감</strong> — 허준 저술 의학서<br>
+              · <strong>난중일기</strong> — 이순신 일기 (유네스코)<br>
+              · <strong>대동여지도</strong> — 김정호 제작
+            </div>
+          </div>
+          <div>
+            <div class="field-label">근현대 조약 (필수)</div>
+            <div class="field-value">
+              · 1876 <strong>강화도조약</strong> — 최초 근대 · 불평등 조약<br>
+              · 1905 <strong>을사늑약</strong> — 외교권 박탈<br>
+              · 1910 <strong>한일병합조약</strong> — 국권 상실 (경술국치)
+            </div>
+          </div>
+        </div>
+        <div class="tip">
+          <div class="tip-label">시험 포인트</div>
+          "한글을 만든 왕은?" → <strong>세종대왕</strong> &nbsp;|&nbsp; "측우기는?" → <strong>빗물 측정 기구</strong><br>
+          "물시계는?" → <strong>자격루</strong> &nbsp;|&nbsp; "해시계는?" → <strong>앙부일구</strong><br>
+          "조선 최고 법전 + 완성한 왕은?" → <strong>경국대전 / 성종</strong><br>
+          "정조 때 거중기로 쌓은 성은?" → <strong>화성</strong> (정약용 설계)<br>
+          "최초 근대 불평등 조약은?" → <strong>강화도조약 (1876)</strong>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /eras -->
+</div><!-- /wrap -->
+
+
+<!-- QUIZ SECTION -->
+<div class="quiz-section">
+  <div class="wrap">
+    <div class="quiz-head">
+      <h2>빠른 퀴즈</h2>
+      <p>카드를 클릭하면 정답이 나옵니다</p>
+    </div>
+    <div class="quiz-grid" id="quizGrid"></div>
+  </div>
+</div>
+
+
+<!-- 독립운동가 -->
+<div class="activists-section">
+  <div class="wrap">
+    <div class="section-title">
+      <h2>독립운동가 필수 정리</h2>
+      <span>일제강점기 · 출제 빈도 높음</span>
+    </div>
+    <div class="act-grid">
+      <div class="acard"><div class="acard-name">안중근</div><div class="acard-key">이토 히로부미 저격</div><div class="acard-detail">1909년 하얼빈역 · 일본 초대 조선통감 사살</div></div>
+      <div class="acard"><div class="acard-name">유관순</div><div class="acard-key">3·1운동 · 아우내 만세</div><div class="acard-detail">이화학당 학생 · 1920년 옥중 순국</div></div>
+      <div class="acard"><div class="acard-name">김구</div><div class="acard-key">임시정부 주석</div><div class="acard-detail">상하이 임시정부 주석 · 백범일지 저술</div></div>
+      <div class="acard"><div class="acard-name">윤봉길</div><div class="acard-key">홍커우공원 의거</div><div class="acard-detail">1932년 상하이 폭탄 투척</div></div>
+      <div class="acard"><div class="acard-name">이봉창</div><div class="acard-key">일왕 암살 시도</div><div class="acard-detail">1932년 도쿄 · 히로히토 마차에 수류탄 투척</div></div>
+      <div class="acard"><div class="acard-name">안창호</div><div class="acard-key">대성학교 설립</div><div class="acard-detail">도산 · 흥사단 설립 · 청년 민족교육</div></div>
+      <div class="acard"><div class="acard-name">김좌진</div><div class="acard-key">청산리대첩</div><div class="acard-detail">1920년 독립군 최대 승리 · 만주 전투</div></div>
+      <div class="acard"><div class="acard-name">3·1운동</div><div class="acard-key">1919년 독립선언</div><div class="acard-detail">탑골공원 · 민족대표 33인 · 독립선언서 낭독</div></div>
+    </div>
+  </div>
+</div>
+
+<footer>귀화면접 한국 고대사 필수 정리 · 사실 검증 완료</footer>
+
+<script>
+function tog(btn) {
+  btn.closest('.era').classList.toggle('open');
+}
+
+const quizData = [
+  ["고조선을 세운 사람은?","단군왕검"],
+  ["고조선 이야기가 처음 실린 책은?","삼국유사"],
+  ["개천절은 무엇을 기념?","단군이 고조선을 세운 날"],
+  ["고구려를 세운 사람은?","주몽"],
+  ["북진정책으로 영토를 넓힌 왕은?","광개토대왕"],
+  ["고구려 유민이 세운 나라는?","발해 (대조영)"],
+  ["백제를 세운 사람은?","온조왕"],
+  ["온조왕은 누구의 아들인가?","주몽의 아들"],
+  ["해상무역으로 첫 전성기를 맞은 나라는?","백제"],
+  ["신라를 세운 사람은?","박혁거세"],
+  ["화랑도 정비 + 한강 확보한 왕은?","진흥왕"],
+  ["첨성대를 세운 왕은?","선덕여왕"],
+  ["삼국통일을 완성한 왕은?","문무왕 (676년)"],
+  ["삼국통일 공신 장군은?","김유신"],
+  ["발해를 세운 사람은?","대조영"],
+  ["고려를 세운 사람은?","태조 왕건"],
+  ["후고구려를 세운 왕은?","궁예"],
+  ["Korea의 어원이 된 나라는?","고려 (Goryeo)"],
+  ["고려 대표 도자기는?","고려청자"],
+  ["목화씨를 도입한 사람은?","문익점"],
+  ["세계 최초 금속활자본은?","직지심체요절 (1377)"],
+  ["팔만대장경 보관 장소는?","합천 해인사"],
+  ["조선 수도는?","한양 (현재 서울)"],
+  ["한글(훈민정음)을 만든 왕은?","세종대왕 (4대 왕)"],
+  ["비가 내린 양을 재는 기구는?","측우기"],
+  ["물의 흐름으로 시간을 알리는 기구는?","자격루 (장영실 제작)"],
+  ["태양 그림자로 시간을 재는 기구는?","앙부일구"],
+  ["이순신 3대 대첩은?","한산도 · 명량 · 노량대첩"],
+  ["거북선을 만든 사람은?","이순신"],
+  ["임진왜란 마지막 해전·이순신 전사는?","노량대첩 (1598)"],
+  ["행주대첩의 장군은?","권율"],
+  ["진주대첩의 장군은?","김시민"],
+  ["목민심서를 쓴 실학자는?","정약용"],
+  ["대동여지도를 만든 사람은?","김정호"],
+  ["조선 최고 법전 + 완성한 왕은?","경국대전 / 성종"],
+  ["정조 때 거중기로 쌓은 성은?","화성 (정약용 설계)"],
+  ["최초 근대 불평등 조약은?","강화도조약 (1876)"],
+  ["외교권 박탈 조약은?","을사늑약 (1905)"],
+  ["이토 히로부미를 저격한 독립운동가는?","안중근"],
+  ["홍커우공원에 폭탄을 투척한 독립운동가는?","윤봉길"],
+  ["임시정부를 지킨 독립운동가는?","김구"],
+  ["청산리대첩을 이끈 장군은?","김좌진"],
+  ["대성학교를 세운 독립운동가는?","안창호"],
+  ["3·1운동은 어디서 시작됐나?","탑골공원 (1919년)"],
+];
+
+const grid = document.getElementById('quizGrid');
+quizData.forEach(([q,a]) => {
+  const el = document.createElement('div');
+  el.className = 'qcard';
+  el.innerHTML = `<div class="q-text">${q}</div><div class="q-ans">${a}</div><div class="q-hint">탭하여 정답 확인</div>`;
+  el.addEventListener('click', () => el.classList.toggle('on'));
+  grid.appendChild(el);
+});
+</script>
+</body>
+</html>
