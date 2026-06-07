@@ -109,7 +109,14 @@ header .sub{font-size:13.5px;color:var(--text-2);}
 .quiz-bar .qinfo{font-family:var(--mono);font-size:12px;color:var(--text-3);}
 .qbtn{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 14px;border:1px solid var(--border2);border-radius:8px;background:var(--white);color:var(--text-2);cursor:pointer;}
 .qbtn:hover{border-color:var(--text-3);}
-.flash{background:var(--white);border:1px solid var(--border);border-radius:15px;min-height:330px;display:flex;flex-direction:column;cursor:pointer;overflow:hidden;}
+.flash{position:relative;background:var(--white);border:1px solid var(--border);border-radius:15px;min-height:330px;display:flex;flex-direction:column;cursor:pointer;overflow:hidden;}
+.fav-btn{position:absolute;top:11px;right:13px;z-index:2;border:none;background:none;cursor:pointer;font-size:23px;line-height:1;color:#dcdcd8;padding:4px;transition:transform .12s,color .12s;}
+.fav-btn:hover{transform:scale(1.18);}
+.fav-btn.on{color:#f5b301;text-shadow:0 1px 2px rgba(245,179,1,.3);}
+.fchip.fav-chip.on{background:#f5b301;border-color:#f5b301;color:#3a2c00;}
+.qa-fav{border:none;background:none;cursor:pointer;font-size:15px;line-height:1;color:#dcdcd8;padding:2px 4px;flex-shrink:0;margin-top:1px;transition:transform .12s,color .12s;}
+.qa-fav:hover{transform:scale(1.2);}
+.qa-fav.on{color:#f5b301;}
 .flash-top{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:17px 20px 0;}
 .flash-top .ft-topic{font-size:10.5px;font-weight:700;color:#fff;border-radius:4px;padding:2px 8px;}
 .flash-top .ft-sub{font-size:11px;color:var(--text-2);background:#f4f4f2;border-radius:4px;padding:2px 7px;}
@@ -158,7 +165,7 @@ footer{border-top:1px solid var(--border);padding:22px 20px 34px;text-align:cent
 
 <section id="listView" class="wrap">
   <div class="controls">
-    <input type="text" class="search" id="search" oninput="render()" />
+    <input type="text" class="search" id="search" oninput="render();saveState()" />
     <div class="filter-row" id="diffRow"><span class="fl" id="lblDiff"></span></div>
     <div class="filter-row" id="impRow"><span class="fl" id="lblImp"></span></div>
     <div class="countbar"><span id="countText"></span><button class="btn-reset" id="resetBtn" onclick="resetFilters()"></button></div>
@@ -974,6 +981,7 @@ quizData.forEach(([q,a]) => {
   </div>
   <div class="filter-row" id="quizTopicRow" style="margin-bottom:16px;"></div>
   <div class="flash" id="flash" onclick="flipCard()">
+    <button class="fav-btn" id="favBtn" onclick="event.stopPropagation();toggleCurFav()" title="즐겨찾기 / 收藏">★</button>
     <div class="flash-top" id="flashTop"></div>
     <div class="flash-q"><div class="qtext" id="flashQ"></div></div>
     <div class="flash-hint" id="flashHint"></div>
@@ -996,7 +1004,7 @@ const STR = {
     subtitle:"전체 "+QA.length+"문제 · 12개 주제 · 한국어 ↔ 中文 전환",
     tabList:"주제별 정리", tabOrig:"역사 원본 정리", tabQuiz:"플래시카드 퀴즈",
     search:"질문 · 정답 · 키워드 검색…", lblDiff:"난이도", lblImp:"중요도", lblTopic:"주제",
-    all:"전체", reset:"필터 초기화", count:(n)=>n+"문제",
+    all:"전체", reset:"필터 초기화", count:(n)=>n+"문제", favLabel:"즐겨찾기", favEmpty:"즐겨찾기한 문제가 없습니다 · 카드의 ★를 눌러 추가하세요",
     kwLabel:"핵심 암기 키워드 (탭하면 이동)", ansLabel:"정답", descLabel:"설명",
     tipLabel:"시험 포인트 (중요도 상)", revealHint:"카드를 탭하면 정답이 보입니다",
     prev:"◀ 이전", next:"다음 ▶", shuffle:"🔀 섞기", quizFilter:"⚙ 필터 변경",
@@ -1007,7 +1015,7 @@ const STR = {
     subtitle:"全 "+QA.length+" 题 · 12个主题 · 韩语 ↔ 中文 切换",
     tabList:"按主题整理", tabOrig:"历史·原版整理", tabQuiz:"闪卡测验",
     search:"搜索问题 · 答案 · 关键词…", lblDiff:"难度", lblImp:"重要度", lblTopic:"主题",
-    all:"全部", reset:"重置筛选", count:(n)=>n+" 题",
+    all:"全部", reset:"重置筛选", count:(n)=>n+" 题", favLabel:"收藏", favEmpty:"还没有收藏的题目 · 点卡片上的 ★ 添加",
     kwLabel:"速记关键词（点击跳转）", ansLabel:"答案", descLabel:"说明",
     tipLabel:"考点（重要度·高）", revealHint:"点击卡片查看答案",
     prev:"◀ 上一题", next:"下一题 ▶", shuffle:"🔀 打乱", quizFilter:"⚙ 修改筛选",
@@ -1016,8 +1024,21 @@ const STR = {
     footer:"2026 归化面试完全攻略 · 全 "+QA.length+" 题<br>问题·答案以原始数据库为准 · 速记/说明的中文为辅助翻译"}
 };
 
-let lang='ko', view='list', fDiff='all', fImp='all', fQuizTopic='all';
+let lang='ko', view='list', fDiff='all', fImp='all', fQuizTopic='all', favOnly=false;
 let quizList=[], quizIdx=0, quizFlipped=false;
+
+// --- 즐겨찾기 + 상태 저장 (localStorage) ---
+const FAV_KEY='krNat.favs', ST_KEY='krNat.state';
+let favs=new Set();
+try{favs=new Set((JSON.parse(localStorage.getItem(FAV_KEY)||'[]')||[]).map(String));}catch(e){}
+function saveFavs(){try{localStorage.setItem(FAV_KEY,JSON.stringify([...favs]));}catch(e){}}
+function isFav(n){return favs.has(String(n));}
+function toggleFav(n){n=String(n);if(favs.has(n))favs.delete(n);else favs.add(n);saveFavs();}
+function saveState(){try{localStorage.setItem(ST_KEY,JSON.stringify({
+  lang,view,fDiff,fImp,fQuizTopic,favOnly,
+  search:search.value,
+  cardN:(quizList[quizIdx]?quizList[quizIdx].n:null)
+}));}catch(e){}}
 const DIFFS=["쉬움","보통","어려움"], IMPS=["상","중","하"];
 const impStars={"상":"★★★","중":"★★","하":"★"}, impCls={"상":"high","중":"mid","하":"low"};
 
@@ -1038,6 +1059,7 @@ function setLang(l){
   document.documentElement.lang=(l==='zh'?'zh':'ko');
   applyStrings(); buildFilters(); buildQuizTopics(); render();
   if(view==='quiz') renderQuiz();
+  saveState();
 }
 function applyStrings(){
   const s=STR[lang];
@@ -1051,10 +1073,10 @@ function buildFilters(){
   const s=STR[lang];
   let dh=fchip(fDiff,'all',s.all); DIFFS.forEach(d=>dh+=fchip(fDiff,d,dl(d)));
   const dr=document.getElementById('diffRow'); dr.innerHTML='<span class="fl">'+s.lblDiff+'</span>'+dh;
-  dr.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{fDiff=c.dataset.val;buildFilters();render();});
+  dr.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{fDiff=c.dataset.val;buildFilters();render();saveState();});
   let ih=fchip(fImp,'all',s.all); IMPS.forEach(i=>ih+=fchip(fImp,i,il(i)+' '+impStars[i]));
   const ir=document.getElementById('impRow'); ir.innerHTML='<span class="fl">'+s.lblImp+'</span>'+ih;
-  ir.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{fImp=c.dataset.val;buildFilters();render();});
+  ir.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{fImp=c.dataset.val;buildFilters();render();saveState();});
 }
 function passFilter(x,q){
   if(fDiff!=='all'&&x.diff!==fDiff)return false;
@@ -1065,10 +1087,15 @@ function passFilter(x,q){
 function currentFilter(){const q=search.value.trim().toLowerCase();return QA.filter(x=>passFilter(x,q));}
 function buildQuizTopics(){
   const s=STR[lang];
-  let h='<span class="fl">'+s.lblTopic+'</span>'+fchip(fQuizTopic,'all',s.all);
+  const favN=QA.filter(x=>isFav(x.n)).length;
+  let h='<button class="fchip fav-chip'+(favOnly?' on':'')+'" data-fav="1">★ '+s.favLabel+' '+favN+'</button>';
+  h+='<span class="fl">'+s.lblTopic+'</span>'+fchip(fQuizTopic,'all',s.all);
   DB.topicOrder.forEach(t=>{const n=QA.filter(x=>x.topic===t).length;h+=fchip(fQuizTopic,t,tl(t)+' '+n);});
   const r=document.getElementById('quizTopicRow'); r.innerHTML=h;
-  r.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{fQuizTopic=c.dataset.val;buildQuizTopics();startQuiz();});
+  r.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{
+    if(c.dataset.fav)favOnly=!favOnly; else fQuizTopic=c.dataset.val;
+    buildQuizTopics();startQuiz();
+  });
 }
 
 function render(){
@@ -1112,7 +1139,7 @@ function render(){
             +'<div class="qa-main">'
               +'<div class="qa-meta"><span class="t-imp '+impCls[x.imp]+'">'+impStars[x.imp]+'</span><span class="t-diff">'+dl(x.diff)+'</span></div>'
               +'<div class="qa-q">'+esc(qT(x))+'</div>'
-            +'</div><span class="qa-arrow">▾</span>'
+            +'</div><button class="qa-fav'+(isFav(x.n)?' on':'')+'" data-fav="'+x.n+'" onclick="event.stopPropagation();toggleFavList(\''+x.n+'\',this)" title="즐겨찾기 / 收藏">★</button><span class="qa-arrow">▾</span>'
           +'</div>'
           +'<div class="qa-body"><div class="ans-box"><div class="ans-label">'+s.ansLabel+'</div><div class="ans-text">'+esc(aT(x))+'</div></div>'
           +'<div class="qa-desc"><b>'+s.descLabel+'</b>'+esc(deT(x))+'</div></div>'
@@ -1150,7 +1177,7 @@ function render(){
 }
 function toggleEra(el){el.closest('.era').classList.toggle('open');}
 function toggleQA(el){el.closest('.qa').classList.toggle('open');}
-function resetFilters(){fDiff='all';fImp='all';search.value='';buildFilters();render();}
+function resetFilters(){fDiff='all';fImp='all';search.value='';buildFilters();render();saveState();}
 
 function setView(v){
   view=v;
@@ -1160,18 +1187,29 @@ function setView(v){
   document.getElementById('quizView').classList.toggle('hidden',v!=='quiz');
   if(v==='quiz')startQuiz();
   window.scrollTo({top:0,behavior:'smooth'});
+  saveState();
 }
-function startQuiz(){const q=search.value.trim().toLowerCase();quizList=QA.filter(x=>passFilter(x,q)&&(fQuizTopic==='all'||x.topic===fQuizTopic));quizIdx=0;quizFlipped=false;renderQuiz();}
-function shuffleQuiz(){for(let i=quizList.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[quizList[i],quizList[j]]=[quizList[j],quizList[i]];}quizIdx=0;quizFlipped=false;renderQuiz();}
+function buildQuizList(){const q=search.value.trim().toLowerCase();quizList=QA.filter(x=>passFilter(x,q)&&(fQuizTopic==='all'||x.topic===fQuizTopic)&&(!favOnly||isFav(x.n)));}
+function startQuiz(restoreN){
+  const keep=(restoreN!=null)?restoreN:(quizList[quizIdx]?quizList[quizIdx].n:null);
+  buildQuizList();
+  const i=(keep!=null)?quizList.findIndex(x=>String(x.n)===String(keep)):-1;
+  quizIdx=i>=0?i:0;quizFlipped=false;renderQuiz();saveState();
+}
+function shuffleQuiz(){for(let i=quizList.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[quizList[i],quizList[j]]=[quizList[j],quizList[i]];}quizIdx=0;quizFlipped=false;renderQuiz();saveState();}
 function flipCard(){quizFlipped=!quizFlipped;renderQuiz();}
-function prevCard(){if(quizIdx>0){quizIdx--;quizFlipped=false;renderQuiz();}}
-function nextCard(){if(quizIdx<quizList.length-1){quizIdx++;quizFlipped=false;renderQuiz();}}
+function prevCard(){if(quizIdx>0){quizIdx--;quizFlipped=false;renderQuiz();saveState();}}
+function nextCard(){if(quizIdx<quizList.length-1){quizIdx++;quizFlipped=false;renderQuiz();saveState();}}
+function updateFavBtn(){const b=document.getElementById('favBtn');if(!b)return;if(!quizList.length){b.style.display='none';return;}b.style.display='';b.classList.toggle('on',isFav(quizList[quizIdx].n));}
+function syncFavUI(n){document.querySelectorAll('.qa-fav[data-fav="'+n+'"]').forEach(e=>e.classList.toggle('on',isFav(n)));updateFavBtn();}
+function toggleFavList(n,el){toggleFav(n);if(el)el.classList.toggle('on',isFav(n));syncFavUI(n);buildQuizTopics();saveState();}
+function toggleCurFav(){if(!quizList.length)return;const n=quizList[quizIdx].n;toggleFav(n);syncFavUI(n);buildQuizTopics();if(favOnly)startQuiz();else saveState();}
 function renderQuiz(){
   const s=STR[lang];
   quizInfo.textContent=s.quizInfo(quizList.length);
   flashHint.textContent=s.revealHint; prevBtn.textContent=s.prev; nextBtn.textContent=s.next;
   const flash=document.getElementById('flash');
-  if(!quizList.length){flashTop.innerHTML='';flashQ.textContent=s.empty;flashAns.innerHTML='';flash.classList.remove('flip');quizProg.textContent='0 / 0';prevBtn.disabled=true;nextBtn.disabled=true;return;}
+  if(!quizList.length){flashTop.innerHTML='';flashQ.textContent=(favOnly?s.favEmpty:s.empty);flashAns.innerHTML='';flash.classList.remove('flip');quizProg.textContent='0 / 0';prevBtn.disabled=true;nextBtn.disabled=true;updateFavBtn();return;}
   const x=quizList[quizIdx], col=DB.topicColor[x.topic];
   flashTop.innerHTML='<span class="ft-topic" style="background:'+col+'">'+tl(x.topic)+'</span><span class="ft-sub">'+sl(x.sub)+'</span><span class="t-imp '+impCls[x.imp]+'">'+impStars[x.imp]+'</span><span class="t-diff">'+dl(x.diff)+'</span>';
   flashQ.textContent=qT(x);
@@ -1179,10 +1217,28 @@ function renderQuiz(){
   flash.classList.toggle('flip',quizFlipped);
   quizProg.textContent=s.prog(quizIdx+1,quizList.length);
   prevBtn.disabled=(quizIdx===0); nextBtn.disabled=(quizIdx===quizList.length-1);
+  updateFavBtn();
 }
 document.addEventListener('keydown',e=>{if(view!=='quiz')return;if(e.key==='ArrowLeft')prevCard();else if(e.key==='ArrowRight')nextCard();else if(e.key===' '||e.key==='Enter'){e.preventDefault();flipCard();}});
 
-applyStrings(); buildFilters(); buildQuizTopics(); render();
+// --- 저장된 상태 복원 ---
+(function restore(){
+  let st={};try{st=JSON.parse(localStorage.getItem(ST_KEY)||'{}')||{};}catch(e){}
+  lang=(st.lang==='zh')?'zh':'ko';
+  fDiff=st.fDiff||'all'; fImp=st.fImp||'all'; fQuizTopic=st.fQuizTopic||'all'; favOnly=!!st.favOnly;
+  document.getElementById('langKo').classList.toggle('on',lang==='ko');
+  document.getElementById('langZh').classList.toggle('on',lang==='zh');
+  document.documentElement.lang=(lang==='zh'?'zh':'ko');
+  search.value=st.search||'';
+  applyStrings(); buildFilters(); buildQuizTopics(); render();
+  const v=(st.view==='orig'||st.view==='quiz')?st.view:'list';
+  view=v;
+  tabList.classList.toggle('on',v==='list'); tabOrig.classList.toggle('on',v==='orig'); tabQuiz.classList.toggle('on',v==='quiz');
+  document.getElementById('listView').classList.toggle('hidden',v!=='list');
+  document.getElementById('origView').classList.toggle('hidden',v!=='orig');
+  document.getElementById('quizView').classList.toggle('hidden',v!=='quiz');
+  if(v==='quiz')startQuiz(st.cardN);
+})();
 </script>
 </body>
 </html>
