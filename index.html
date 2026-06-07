@@ -990,7 +990,6 @@ quizData.forEach(([q,a]) => {
     <div class="quiz-actions">
       <button class="fav-toggle" id="favToggle" onclick="toggleFavOnly()" title="즐겨찾기만 보기 / 只看收藏"><span class="star">★</span><span id="favToggleLabel"></span><span class="cnt" id="favToggleCnt"></span></button>
       <button class="qbtn" id="shuffleBtn" onclick="shuffleQuiz()"></button>
-      <button class="qbtn" id="quizFilterBtn" onclick="setView('list')"></button>
     </div>
   </div>
   <div class="filter-row" id="quizTopicRow" style="margin-bottom:16px;"></div>
@@ -1023,7 +1022,7 @@ const STR = {
     stTodayPre:"오늘", stTodaySuf:"장", stStreakPre:"연속", stStreakSuf:"일",
     kwLabel:"핵심 암기 키워드 (탭하면 이동)", ansLabel:"정답", descLabel:"설명",
     tipLabel:"시험 포인트 (중요도 상)", revealHint:"카드를 탭하면 정답이 보입니다",
-    prev:"◀ 이전", next:"다음 ▶", shuffle:"🔀 섞기", quizFilter:"⚙ 필터 변경",
+    prev:"◀ 이전", next:"다음 ▶", shuffle:"🔀 섞기",
     quizInfo:(n)=>"필터된 "+n+"문제 · 탭하여 정답 확인", prog:(i,n)=>i+" / "+n,
     empty:"조건에 맞는 문제가 없습니다",
     footer:"2026 귀화면접 완전정복 · 전체 "+QA.length+"문제<br>질문·정답은 원본 DB 기준 · 암기/설명 중국어는 보조 번역"},
@@ -1035,7 +1034,7 @@ const STR = {
     stTodayPre:"今天", stTodaySuf:" 张", stStreakPre:"连续", stStreakSuf:" 天",
     kwLabel:"速记关键词（点击跳转）", ansLabel:"答案", descLabel:"说明",
     tipLabel:"考点（重要度·高）", revealHint:"点击卡片查看答案",
-    prev:"◀ 上一题", next:"下一题 ▶", shuffle:"🔀 打乱", quizFilter:"⚙ 修改筛选",
+    prev:"◀ 上一题", next:"下一题 ▶", shuffle:"🔀 打乱",
     quizInfo:(n)=>"已筛选 "+n+" 题 · 点击查看答案", prog:(i,n)=>i+" / "+n,
     empty:"没有符合条件的题目",
     footer:"2026 归化面试完全攻略 · 全 "+QA.length+" 题<br>问题·答案以原始数据库为准 · 速记/说明的中文为辅助翻译"}
@@ -1115,7 +1114,7 @@ function applyStrings(){
   const s=STR[lang];
   eyebrow.textContent=s.eyebrow; title.textContent=s.title; subtitle.textContent=s.subtitle;
   tabList.textContent=s.tabList; tabOrig.textContent=s.tabOrig; tabQuiz.textContent=s.tabQuiz;
-  search.placeholder=s.search; resetBtn.textContent=s.reset; shuffleBtn.textContent=s.shuffle; quizFilterBtn.textContent=s.quizFilter;
+  search.placeholder=s.search; resetBtn.textContent=s.reset; shuffleBtn.textContent=s.shuffle;
   prevBtn.textContent=s.prev; nextBtn.textContent=s.next; footer.innerHTML=s.footer;
 }
 function fchip(active,val,label){return '<button class="fchip'+(active===val?' on':'')+'" data-val="'+val+'">'+label+'</button>';}
