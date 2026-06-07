@@ -113,7 +113,18 @@ header .sub{font-size:13.5px;color:var(--text-2);}
 .fav-btn{position:absolute;top:11px;right:13px;z-index:2;border:none;background:none;cursor:pointer;font-size:23px;line-height:1;color:#dcdcd8;padding:4px;transition:transform .12s,color .12s;}
 .fav-btn:hover{transform:scale(1.18);}
 .fav-btn.on{color:#f5b301;text-shadow:0 1px 2px rgba(245,179,1,.3);}
-.fchip.fav-chip.on{background:#f5b301;border-color:#f5b301;color:#3a2c00;}
+.quiz-actions{display:flex;gap:7px;flex-wrap:wrap;}
+.fav-toggle{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 13px;border:1px solid var(--border2);border-radius:8px;background:var(--white);color:var(--text-2);cursor:pointer;transition:all .15s;}
+.fav-toggle:hover{border-color:var(--text-3);}
+.fav-toggle .star{font-size:14px;line-height:1;color:#cfc6ac;}
+.fav-toggle .cnt{font-family:var(--mono);font-size:11px;opacity:.65;}
+.fav-toggle.on{background:#fff7e6;border-color:#f0cf6b;color:#7a5c00;}
+.fav-toggle.on .star{color:#f5b301;}
+.fav-toggle.on .cnt{opacity:.85;}
+.streak-bar{display:flex;align-items:center;gap:9px;margin-bottom:14px;font-family:var(--mono);font-size:12px;color:var(--text-3);}
+.streak-bar .sb b{color:var(--text);font-weight:700;font-size:13px;}
+.streak-bar .sb-sep{color:var(--border2);}
+.streak-bar .sb-fire{font-size:12px;}
 .qa-fav{border:none;background:none;cursor:pointer;font-size:15px;line-height:1;color:#dcdcd8;padding:2px 4px;flex-shrink:0;margin-top:1px;transition:transform .12s,color .12s;}
 .qa-fav:hover{transform:scale(1.2);}
 .qa-fav.on{color:#f5b301;}
@@ -974,12 +985,14 @@ quizData.forEach(([q,a]) => {
 <section id="quizView" class="wrap hidden">
   <div class="quiz-bar">
     <span class="qinfo" id="quizInfo"></span>
-    <div style="display:flex;gap:7px;">
+    <div class="quiz-actions">
+      <button class="fav-toggle" id="favToggle" onclick="toggleFavOnly()" title="즐겨찾기만 보기 / 只看收藏"><span class="star">★</span><span id="favToggleLabel"></span><span class="cnt" id="favToggleCnt"></span></button>
       <button class="qbtn" id="shuffleBtn" onclick="shuffleQuiz()"></button>
       <button class="qbtn" id="quizFilterBtn" onclick="setView('list')"></button>
     </div>
   </div>
   <div class="filter-row" id="quizTopicRow" style="margin-bottom:16px;"></div>
+  <div class="streak-bar" id="streakBar"></div>
   <div class="flash" id="flash" onclick="flipCard()">
     <button class="fav-btn" id="favBtn" onclick="event.stopPropagation();toggleCurFav()" title="즐겨찾기 / 收藏">★</button>
     <div class="flash-top" id="flashTop"></div>
@@ -1005,6 +1018,7 @@ const STR = {
     tabList:"주제별 정리", tabOrig:"역사 원본 정리", tabQuiz:"플래시카드 퀴즈",
     search:"질문 · 정답 · 키워드 검색…", lblDiff:"난이도", lblImp:"중요도", lblTopic:"주제",
     all:"전체", reset:"필터 초기화", count:(n)=>n+"문제", favLabel:"즐겨찾기", favEmpty:"즐겨찾기한 문제가 없습니다 · 카드의 ★를 눌러 추가하세요",
+    stTodayPre:"오늘", stTodaySuf:"장", stStreakPre:"연속", stStreakSuf:"일",
     kwLabel:"핵심 암기 키워드 (탭하면 이동)", ansLabel:"정답", descLabel:"설명",
     tipLabel:"시험 포인트 (중요도 상)", revealHint:"카드를 탭하면 정답이 보입니다",
     prev:"◀ 이전", next:"다음 ▶", shuffle:"🔀 섞기", quizFilter:"⚙ 필터 변경",
@@ -1016,6 +1030,7 @@ const STR = {
     tabList:"按主题整理", tabOrig:"历史·原版整理", tabQuiz:"闪卡测验",
     search:"搜索问题 · 答案 · 关键词…", lblDiff:"难度", lblImp:"重要度", lblTopic:"主题",
     all:"全部", reset:"重置筛选", count:(n)=>n+" 题", favLabel:"收藏", favEmpty:"还没有收藏的题目 · 点卡片上的 ★ 添加",
+    stTodayPre:"今天", stTodaySuf:" 张", stStreakPre:"连续", stStreakSuf:" 天",
     kwLabel:"速记关键词（点击跳转）", ansLabel:"答案", descLabel:"说明",
     tipLabel:"考点（重要度·高）", revealHint:"点击卡片查看答案",
     prev:"◀ 上一题", next:"下一题 ▶", shuffle:"🔀 打乱", quizFilter:"⚙ 修改筛选",
@@ -1034,6 +1049,39 @@ try{favs=new Set((JSON.parse(localStorage.getItem(FAV_KEY)||'[]')||[]).map(Strin
 function saveFavs(){try{localStorage.setItem(FAV_KEY,JSON.stringify([...favs]));}catch(e){}}
 function isFav(n){return favs.has(String(n));}
 function toggleFav(n){n=String(n);if(favs.has(n))favs.delete(n);else favs.add(n);saveFavs();}
+// --- 매일 학습 기록 (打卡) ---
+const DAILY_KEY='krNat.daily', TODAY_KEY='krNat.today';
+let daily={}, todaySeen=new Set(), todayDate='';
+function dayKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function today(){return dayKey(new Date());}
+function loadDaily(){
+  try{daily=JSON.parse(localStorage.getItem(DAILY_KEY)||'{}')||{};}catch(e){daily={};}
+  let t={};try{t=JSON.parse(localStorage.getItem(TODAY_KEY)||'{}')||{};}catch(e){}
+  todayDate=today();
+  todaySeen=(t.date===todayDate)?new Set((t.seen||[]).map(String)):new Set();
+}
+function markSeen(n){
+  n=String(n);const td=today();
+  if(td!==todayDate){todayDate=td;todaySeen=new Set();}
+  if(todaySeen.has(n))return;
+  todaySeen.add(n);
+  daily[td]=(daily[td]||0)+1;
+  try{localStorage.setItem(DAILY_KEY,JSON.stringify(daily));}catch(e){}
+  try{localStorage.setItem(TODAY_KEY,JSON.stringify({date:td,seen:[...todaySeen]}));}catch(e){}
+}
+function streak(){
+  let cur=new Date(), s=0;
+  if(!daily[dayKey(cur)])cur.setDate(cur.getDate()-1); // 오늘 아직 0장이어도 어제까지 연속 유지
+  while(daily[dayKey(cur)]){s++;cur.setDate(cur.getDate()-1);}
+  return s;
+}
+function updateStreakUI(){
+  const el=document.getElementById('streakBar');if(!el)return;
+  const s=STR[lang], tc=daily[today()]||0, st=streak();
+  el.innerHTML='<span class="sb">'+s.stTodayPre+' <b>'+tc+'</b>'+s.stTodaySuf+'</span>'
+    +'<span class="sb-sep">·</span>'
+    +'<span class="sb">'+s.stStreakPre+' <b>'+st+'</b>'+s.stStreakSuf+(st>0?' <span class="sb-fire">🔥</span>':'')+'</span>';
+}
 function saveState(){try{localStorage.setItem(ST_KEY,JSON.stringify({
   lang,view,fDiff,fImp,fQuizTopic,favOnly,
   search:search.value,
@@ -1087,15 +1135,11 @@ function passFilter(x,q){
 function currentFilter(){const q=search.value.trim().toLowerCase();return QA.filter(x=>passFilter(x,q));}
 function buildQuizTopics(){
   const s=STR[lang];
-  const favN=QA.filter(x=>isFav(x.n)).length;
-  let h='<button class="fchip fav-chip'+(favOnly?' on':'')+'" data-fav="1">★ '+s.favLabel+' '+favN+'</button>';
-  h+='<span class="fl">'+s.lblTopic+'</span>'+fchip(fQuizTopic,'all',s.all);
+  let h='<span class="fl">'+s.lblTopic+'</span>'+fchip(fQuizTopic,'all',s.all);
   DB.topicOrder.forEach(t=>{const n=QA.filter(x=>x.topic===t).length;h+=fchip(fQuizTopic,t,tl(t)+' '+n);});
   const r=document.getElementById('quizTopicRow'); r.innerHTML=h;
-  r.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{
-    if(c.dataset.fav)favOnly=!favOnly; else fQuizTopic=c.dataset.val;
-    buildQuizTopics();startQuiz();
-  });
+  r.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{fQuizTopic=c.dataset.val;buildQuizTopics();startQuiz();});
+  updateFavToggle();
 }
 
 function render(){
@@ -1203,26 +1247,30 @@ function nextCard(){if(quizIdx<quizList.length-1){quizIdx++;quizFlipped=false;re
 function updateFavBtn(){const b=document.getElementById('favBtn');if(!b)return;if(!quizList.length){b.style.display='none';return;}b.style.display='';b.classList.toggle('on',isFav(quizList[quizIdx].n));}
 function syncFavUI(n){document.querySelectorAll('.qa-fav[data-fav="'+n+'"]').forEach(e=>e.classList.toggle('on',isFav(n)));updateFavBtn();}
 function toggleFavList(n,el){toggleFav(n);if(el)el.classList.toggle('on',isFav(n));syncFavUI(n);buildQuizTopics();saveState();}
-function toggleCurFav(){if(!quizList.length)return;const n=quizList[quizIdx].n;toggleFav(n);syncFavUI(n);buildQuizTopics();if(favOnly)startQuiz();else saveState();}
+function toggleCurFav(){if(!quizList.length)return;const n=quizList[quizIdx].n;toggleFav(n);syncFavUI(n);updateFavToggle();if(favOnly)startQuiz();else saveState();}
+function updateFavToggle(){const b=document.getElementById('favToggle');if(!b)return;const s=STR[lang];document.getElementById('favToggleLabel').textContent=s.favLabel;document.getElementById('favToggleCnt').textContent=QA.filter(x=>isFav(x.n)).length;b.classList.toggle('on',favOnly);}
+function toggleFavOnly(){favOnly=!favOnly;updateFavToggle();startQuiz();}
 function renderQuiz(){
   const s=STR[lang];
   quizInfo.textContent=s.quizInfo(quizList.length);
   flashHint.textContent=s.revealHint; prevBtn.textContent=s.prev; nextBtn.textContent=s.next;
   const flash=document.getElementById('flash');
-  if(!quizList.length){flashTop.innerHTML='';flashQ.textContent=(favOnly?s.favEmpty:s.empty);flashAns.innerHTML='';flash.classList.remove('flip');quizProg.textContent='0 / 0';prevBtn.disabled=true;nextBtn.disabled=true;updateFavBtn();return;}
+  if(!quizList.length){flashTop.innerHTML='';flashQ.textContent=(favOnly?s.favEmpty:s.empty);flashAns.innerHTML='';flash.classList.remove('flip');quizProg.textContent='0 / 0';prevBtn.disabled=true;nextBtn.disabled=true;updateFavBtn();updateStreakUI();return;}
   const x=quizList[quizIdx], col=DB.topicColor[x.topic];
+  markSeen(x.n);
   flashTop.innerHTML='<span class="ft-topic" style="background:'+col+'">'+tl(x.topic)+'</span><span class="ft-sub">'+sl(x.sub)+'</span><span class="t-imp '+impCls[x.imp]+'">'+impStars[x.imp]+'</span><span class="t-diff">'+dl(x.diff)+'</span>';
   flashQ.textContent=qT(x);
   flashAns.innerHTML='<div class="fa-main">'+esc(aT(x))+'</div><div class="fa-meta"><span class="fa-chip"><b>'+esc(shT(x))+'</b></span><span class="fa-chip desc">'+esc(deT(x))+'</span></div>';
   flash.classList.toggle('flip',quizFlipped);
   quizProg.textContent=s.prog(quizIdx+1,quizList.length);
   prevBtn.disabled=(quizIdx===0); nextBtn.disabled=(quizIdx===quizList.length-1);
-  updateFavBtn();
+  updateFavBtn();updateStreakUI();
 }
 document.addEventListener('keydown',e=>{if(view!=='quiz')return;if(e.key==='ArrowLeft')prevCard();else if(e.key==='ArrowRight')nextCard();else if(e.key===' '||e.key==='Enter'){e.preventDefault();flipCard();}});
 
 // --- 저장된 상태 복원 ---
 (function restore(){
+  loadDaily();
   let st={};try{st=JSON.parse(localStorage.getItem(ST_KEY)||'{}')||{};}catch(e){}
   lang=(st.lang==='zh')?'zh':'ko';
   fDiff=st.fDiff||'all'; fImp=st.fImp||'all'; fQuizTopic=st.fQuizTopic||'all'; favOnly=!!st.favOnly;
