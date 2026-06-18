@@ -1261,10 +1261,12 @@ function passFilter(x,q){
 function currentFilter(){const q=search.value.trim().toLowerCase();return QA.filter(x=>passFilter(x,q));}
 function buildQuizTopics(){
   const s=STR[lang];
+  const q=search.value.trim().toLowerCase();
+  const pool=QA.filter(x=>passFilter(x,q)&&(!favOnly||isFav(x.n)));
   let h='<span class="fl">'+s.lblTopic+'</span>'+fchip(fQuizTopic,'all',s.all);
-  DB.topicOrder.forEach(t=>{const n=QA.filter(x=>x.topic===t).length;h+=fchip(fQuizTopic,t,tl(t)+' '+n);});
+  DB.topicOrder.forEach(t=>{const n=pool.filter(x=>x.topic===t).length;h+=fchip(fQuizTopic,t,tl(t)+' '+n);});
   const r=document.getElementById('quizTopicRow'); r.innerHTML=h;
-  r.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{fQuizTopic=c.dataset.val;buildQuizTopics();startQuiz();});
+  r.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{fQuizTopic=c.dataset.val;startQuiz();});
   updateFavToggle();
 }
 
@@ -1364,6 +1366,7 @@ function startQuiz(restoreN){
   const keep=(restoreN!=null)?restoreN:(quizList[quizIdx]?quizList[quizIdx].n:null);
   buildQuizList();
   const i=(keep!=null)?quizList.findIndex(x=>String(x.n)===String(keep)):-1;
+  buildQuizTopics();
   quizIdx=i>=0?i:0;quizFlipped=false;renderQuiz();saveState();
 }
 function shuffleQuiz(){for(let i=quizList.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[quizList[i],quizList[j]]=[quizList[j],quizList[i]];}quizIdx=0;quizFlipped=false;renderQuiz();saveState();}
