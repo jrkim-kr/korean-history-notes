@@ -122,6 +122,16 @@ header .sub{font-size:13.5px;color:var(--text-2);}
 .fav-toggle.on{background:#fff7e6;border-color:#f0cf6b;color:#7a5c00;}
 .fav-toggle.on .star{color:#f5b301;}
 .fav-toggle.on .cnt{opacity:.85;}
+.sync-panel{margin:-4px 0 16px;padding:13px;border:1px solid var(--border);border-radius:9px;background:var(--white);}
+.sync-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+.sync-row+.sync-row{margin-top:8px;}
+.sync-input{flex:1;min-width:220px;padding:8px 10px;font-family:var(--mono);font-size:11px;border:1px solid var(--border2);border-radius:7px;color:var(--text-2);background:var(--bg);}
+.sync-input:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 3px var(--yellow-bg);}
+.sync-btn{font-family:var(--sans);font-size:12px;font-weight:700;padding:8px 11px;border:1px solid var(--border2);border-radius:7px;background:var(--white);color:var(--text-2);cursor:pointer;white-space:nowrap;}
+.sync-btn:hover{border-color:var(--text-3);}
+.sync-btn.primary{background:#fff7e6;border-color:#f0cf6b;color:#7a5c00;}
+.sync-msg{min-height:16px;margin-top:8px;font-size:11.5px;color:var(--text-3);}
+.sync-msg.bad{color:var(--accent);}
 .streak-bar{display:flex;align-items:center;gap:9px;margin-bottom:14px;font-family:var(--mono);font-size:12px;color:var(--text-3);}
 .streak-bar .sb b{color:var(--text);font-weight:700;font-size:13px;}
 .streak-bar .sb-sep{color:var(--border2);}
@@ -989,8 +999,20 @@ quizData.forEach(([q,a]) => {
     <span class="qinfo" id="quizInfo"></span>
     <div class="quiz-actions">
       <button class="fav-toggle" id="favToggle" onclick="toggleFavOnly()" title="즐겨찾기만 보기 / 只看收藏"><span class="star">★</span><span id="favToggleLabel"></span><span class="cnt" id="favToggleCnt"></span></button>
+      <button class="qbtn" id="syncToggleBtn" onclick="toggleSyncPanel()" title="즐겨찾기 동기화 / 收藏同步"></button>
       <button class="qbtn" id="shuffleBtn" onclick="shuffleQuiz()"></button>
     </div>
+  </div>
+  <div class="sync-panel hidden" id="syncPanel">
+    <div class="sync-row">
+      <button class="sync-btn primary" id="copySyncBtn" onclick="copyFavSyncLink()"></button>
+      <button class="sync-btn" id="shareSyncBtn" onclick="shareFavSyncLink()"></button>
+    </div>
+    <div class="sync-row">
+      <input class="sync-input" id="syncInput" autocomplete="off">
+      <button class="sync-btn" id="importSyncBtn" onclick="importFavSync()"></button>
+    </div>
+    <div class="sync-msg" id="syncMsg" aria-live="polite"></div>
   </div>
   <div class="filter-row" id="quizTopicRow" style="margin-bottom:16px;"></div>
   <div class="streak-bar" id="streakBar"></div>
@@ -1023,6 +1045,10 @@ const STR = {
     kwLabel:"핵심 암기 키워드 (탭하면 이동)", ansLabel:"정답", descLabel:"설명",
     tipLabel:"시험 포인트 (중요도 상)", revealHint:"카드를 탭하면 정답이 보입니다",
     prev:"◀ 이전", next:"다음 ▶", shuffle:"🔀 섞기",
+    sync:"동기화", copySync:"링크 복사", shareSync:"공유", importSync:"가져오기",
+    syncInput:"동기화 링크 붙여넣기", syncCopied:"동기화 링크가 복사되었습니다",
+    syncManual:"링크를 선택해 복사하세요", syncShared:"공유 창을 열었습니다",
+    syncImported:(n)=>"즐겨찾기 "+n+"개를 가져왔습니다", syncInvalid:"동기화 링크를 확인하세요",
     quizInfo:(n)=>"필터된 "+n+"문제 · 탭하여 정답 확인", prog:(i,n)=>i+" / "+n,
     empty:"조건에 맞는 문제가 없습니다",
     footer:"2026 귀화면접 완전정복 · 전체 "+QA.length+"문제<br>질문·정답은 원본 DB 기준 · 암기/설명 중국어는 보조 번역"},
@@ -1035,6 +1061,10 @@ const STR = {
     kwLabel:"速记关键词（点击跳转）", ansLabel:"答案", descLabel:"说明",
     tipLabel:"考点（重要度·高）", revealHint:"点击卡片查看答案",
     prev:"◀ 上一题", next:"下一题 ▶", shuffle:"🔀 打乱",
+    sync:"同步", copySync:"复制链接", shareSync:"分享", importSync:"导入",
+    syncInput:"粘贴同步链接", syncCopied:"同步链接已复制",
+    syncManual:"请选择并复制链接", syncShared:"已打开分享窗口",
+    syncImported:(n)=>"已导入 "+n+" 个收藏", syncInvalid:"请检查同步链接",
     quizInfo:(n)=>"已筛选 "+n+" 题 · 点击查看答案", prog:(i,n)=>i+" / "+n,
     empty:"没有符合条件的题目",
     footer:"2026 归化面试完全攻略 · 全 "+QA.length+" 题<br>问题·答案以原始数据库为准 · 速记/说明的中文为辅助翻译"}
@@ -1047,9 +1077,101 @@ let quizList=[], quizIdx=0, quizFlipped=false;
 const FAV_KEY='krNat.favs', ST_KEY='krNat.state';
 let favs=new Set();
 try{favs=new Set((JSON.parse(localStorage.getItem(FAV_KEY)||'[]')||[]).map(String));}catch(e){}
-function saveFavs(){try{localStorage.setItem(FAV_KEY,JSON.stringify([...favs]));}catch(e){}}
+function saveFavs(){try{localStorage.setItem(FAV_KEY,JSON.stringify([...favs]));}catch(e){}refreshSyncInput();}
 function isFav(n){return favs.has(String(n));}
 function toggleFav(n){n=String(n);if(favs.has(n))favs.delete(n);else favs.add(n);saveFavs();}
+// --- 즐겨찾기 동기화 링크 ---
+const FAV_SYNC_PARAM='favsync';
+const validFavIds=new Set(QA.map(x=>String(x.n)));
+function b64urlEncodeJson(data){
+  const bytes=new TextEncoder().encode(JSON.stringify(data));
+  let raw='';bytes.forEach(b=>raw+=String.fromCharCode(b));
+  return btoa(raw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64urlDecodeJson(token){
+  const s=String(token||'').trim().replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(s+'='.repeat((4-s.length%4)%4));
+  return JSON.parse(new TextDecoder().decode(Uint8Array.from(raw,c=>c.charCodeAt(0))));
+}
+function favSyncList(){return [...favs].filter(n=>validFavIds.has(n)).map(Number).sort((a,b)=>a-b);}
+function favSyncUrl(){
+  const u=new URL(location.href);
+  u.searchParams.set(FAV_SYNC_PARAM,b64urlEncodeJson({v:1,updatedAt:Date.now(),favs:favSyncList()}));
+  u.hash='';
+  return u.toString();
+}
+function extractFavSyncToken(value){
+  const raw=String(value||'').trim();
+  if(!raw)return '';
+  try{return new URL(raw,location.href).searchParams.get(FAV_SYNC_PARAM)||raw;}catch(e){}
+  const m=raw.match(/[?&]favsync=([^&#]+)/);
+  return m?decodeURIComponent(m[1]):raw;
+}
+function parseFavSync(value){
+  try{
+    const data=b64urlDecodeJson(extractFavSyncToken(value));
+    const arr=Array.isArray(data)?data:data.favs;
+    if(!Array.isArray(arr))return null;
+    return [...new Set(arr.map(String).filter(n=>validFavIds.has(n)))];
+  }catch(e){return null;}
+}
+function cleanFavSyncUrl(){
+  if(!location.search.includes(FAV_SYNC_PARAM))return;
+  const u=new URL(location.href);
+  u.searchParams.delete(FAV_SYNC_PARAM);
+  history.replaceState(null,'',u.pathname+(u.search?u.search:'')+u.hash);
+}
+function refreshSyncInput(){
+  const panel=document.getElementById('syncPanel'), input=document.getElementById('syncInput');
+  if(!panel||!input||panel.classList.contains('hidden'))return;
+  input.value=favSyncUrl();
+}
+function showSyncMsg(text,bad){
+  const el=document.getElementById('syncMsg');if(!el)return;
+  el.textContent=text||'';el.classList.toggle('bad',!!bad);
+}
+function refreshFavUI(){
+  render();buildQuizTopics();
+  if(view==='quiz'){
+    if(favOnly)startQuiz();else renderQuiz();
+  }else updateFavToggle();
+}
+function applyFavSync(value){
+  const list=parseFavSync(value);
+  if(!list)return null;
+  favs=new Set(list);favOnly=true;saveFavs();refreshFavUI();
+  return list.length;
+}
+function consumeFavSyncFromUrl(){
+  const params=new URL(location.href).searchParams;
+  if(!params.has(FAV_SYNC_PARAM))return {found:false};
+  const token=params.get(FAV_SYNC_PARAM);
+  const count=applyFavSync(token);
+  cleanFavSyncUrl();
+  return {found:true,ok:count!=null,count};
+}
+function toggleSyncPanel(){
+  const panel=document.getElementById('syncPanel');
+  panel.classList.toggle('hidden');
+  if(!panel.classList.contains('hidden'))refreshSyncInput();
+}
+async function copyFavSyncLink(){
+  const s=STR[lang], url=favSyncUrl(), input=document.getElementById('syncInput');
+  input.value=url;input.select();
+  try{await navigator.clipboard.writeText(url);showSyncMsg(s.syncCopied);}
+  catch(e){try{document.execCommand('copy');showSyncMsg(s.syncCopied);}catch(err){showSyncMsg(s.syncManual,true);}}
+}
+async function shareFavSyncLink(){
+  const s=STR[lang], url=favSyncUrl();
+  if(navigator.share){try{await navigator.share({title:s.title,url});showSyncMsg(s.syncShared);return;}catch(e){if(e.name==='AbortError')return;}}
+  copyFavSyncLink();
+}
+function importFavSync(){
+  const s=STR[lang], count=applyFavSync(document.getElementById('syncInput').value);
+  if(count==null){showSyncMsg(s.syncInvalid,true);return;}
+  showSyncMsg(s.syncImported(count));
+  refreshSyncInput();
+}
 // --- 매일 학습 기록 (打卡) ---
 const DAILY_KEY='krNat.daily', TODAY_KEY='krNat.today';
 let daily={}, todaySeen=new Set(), todayDate='';
@@ -1115,6 +1237,9 @@ function applyStrings(){
   eyebrow.textContent=s.eyebrow; title.textContent=s.title; subtitle.textContent=s.subtitle;
   tabList.textContent=s.tabList; tabOrig.textContent=s.tabOrig; tabQuiz.textContent=s.tabQuiz;
   search.placeholder=s.search; resetBtn.textContent=s.reset; shuffleBtn.textContent=s.shuffle;
+  syncToggleBtn.textContent=s.sync; copySyncBtn.textContent=s.copySync; shareSyncBtn.textContent=s.shareSync;
+  importSyncBtn.textContent=s.importSync; syncInput.placeholder=s.syncInput;
+  shareSyncBtn.style.display=navigator.share?'':'none';
   prevBtn.textContent=s.prev; nextBtn.textContent=s.next; footer.innerHTML=s.footer;
 }
 function fchip(active,val,label){return '<button class="fchip'+(active===val?' on':'')+'" data-val="'+val+'">'+label+'</button>';}
@@ -1273,20 +1398,26 @@ document.addEventListener('keydown',e=>{if(view!=='quiz')return;if(e.key==='Arro
 (function restore(){
   loadDaily();
   let st={};try{st=JSON.parse(localStorage.getItem(ST_KEY)||'{}')||{};}catch(e){}
+  const syncResult=consumeFavSyncFromUrl();
   lang=(st.lang==='zh')?'zh':'ko';
-  fDiff=st.fDiff||'all'; fImp=st.fImp||'all'; fQuizTopic=st.fQuizTopic||'all'; favOnly=!!st.favOnly;
+  fDiff=st.fDiff||'all'; fImp=st.fImp||'all'; fQuizTopic=st.fQuizTopic||'all'; favOnly=syncResult.ok?true:!!st.favOnly;
   document.getElementById('langKo').classList.toggle('on',lang==='ko');
   document.getElementById('langZh').classList.toggle('on',lang==='zh');
   document.documentElement.lang=(lang==='zh'?'zh':'ko');
   search.value=st.search||'';
   applyStrings(); buildFilters(); buildQuizTopics(); render();
-  const v=(st.view==='orig'||st.view==='quiz')?st.view:'list';
+  const v=syncResult.found?'quiz':((st.view==='orig'||st.view==='quiz')?st.view:'list');
   view=v;
   tabList.classList.toggle('on',v==='list'); tabOrig.classList.toggle('on',v==='orig'); tabQuiz.classList.toggle('on',v==='quiz');
   document.getElementById('listView').classList.toggle('hidden',v!=='list');
   document.getElementById('origView').classList.toggle('hidden',v!=='orig');
   document.getElementById('quizView').classList.toggle('hidden',v!=='quiz');
   if(v==='quiz')startQuiz(st.cardN);
+  if(syncResult.found){
+    syncPanel.classList.remove('hidden');
+    refreshSyncInput();
+    showSyncMsg(syncResult.ok?STR[lang].syncImported(syncResult.count):STR[lang].syncInvalid,!syncResult.ok);
+  }
 })();
 </script>
 </body>
