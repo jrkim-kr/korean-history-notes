@@ -122,14 +122,23 @@ header .sub{font-size:13.5px;color:var(--text-2);}
 .fav-toggle.on{background:#fff7e6;border-color:#f0cf6b;color:#7a5c00;}
 .fav-toggle.on .star{color:#f5b301;}
 .fav-toggle.on .cnt{opacity:.85;}
-.sync-panel{margin:-4px 0 16px;padding:13px;border:1px solid var(--border);border-radius:9px;background:var(--white);}
-.sync-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
-.sync-row+.sync-row{margin-top:8px;}
-.sync-input{flex:1;min-width:220px;padding:8px 10px;font-family:var(--mono);font-size:11px;border:1px solid var(--border2);border-radius:7px;color:var(--text-2);background:var(--bg);}
+.sync-panel{margin:-4px 0 16px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--white);}
+.sync-main{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.sync-summary{min-width:0;display:flex;align-items:center;gap:8px;color:var(--text-2);font-size:12.5px;font-weight:600;}
+.sync-summary .star{color:#f5b301;font-size:14px;line-height:1;}
+.sync-summary strong{color:var(--text);font-weight:800;}
+.sync-actions-main{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.sync-import{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.sync-import-toggle{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--text-2);background:none;border:none;cursor:pointer;padding:4px 0;}
+.sync-import-toggle:hover{color:var(--text);}
+.sync-row{display:flex;gap:7px;align-items:center;margin-top:8px;}
+.sync-input{flex:1;min-width:0;padding:8px 10px;font-family:var(--mono);font-size:11px;border:1px solid var(--border2);border-radius:7px;color:var(--text-2);background:var(--bg);}
 .sync-input:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 3px var(--yellow-bg);}
-.sync-btn{font-family:var(--sans);font-size:12px;font-weight:700;padding:8px 11px;border:1px solid var(--border2);border-radius:7px;background:var(--white);color:var(--text-2);cursor:pointer;white-space:nowrap;}
+.sync-btn{font-family:var(--sans);font-size:12px;font-weight:700;min-height:38px;padding:8px 12px;border:1px solid var(--border2);border-radius:7px;background:var(--white);color:var(--text-2);cursor:pointer;white-space:nowrap;}
 .sync-btn:hover{border-color:var(--text-3);}
 .sync-btn.primary{background:#fff7e6;border-color:#f0cf6b;color:#7a5c00;}
+.sync-btn.done{background:var(--green-bg);border-color:#86efac;color:var(--green);}
+.sync-btn:focus-visible,.sync-import-toggle:focus-visible{outline:2px solid #f0cf6b;outline-offset:2px;}
 .sync-msg{min-height:16px;margin-top:8px;font-size:11.5px;color:var(--text-3);}
 .sync-msg.bad{color:var(--accent);}
 .streak-bar{display:flex;align-items:center;gap:9px;margin-bottom:14px;font-family:var(--mono);font-size:12px;color:var(--text-3);}
@@ -194,7 +203,10 @@ footer{border-top:1px solid var(--border);padding:22px 20px 34px;text-align:cent
   .quiz-actions{grid-template-columns:1fr 1fr;}
   .fav-toggle{grid-column:1/-1;}
   .sync-panel{padding:11px;}
-  .sync-input{min-width:100%;}
+  .sync-main{align-items:stretch;flex-direction:column;gap:9px;}
+  .sync-actions-main{display:grid;grid-template-columns:1fr 1fr;width:100%;}
+  .sync-actions-main.one{grid-template-columns:1fr;}
+  .sync-row{flex-direction:column;align-items:stretch;}
   .navbtn{max-width:132px;padding:11px 14px;}
 }
 </style>
@@ -1039,13 +1051,19 @@ quizData.forEach(([q,a]) => {
     </div>
   </div>
   <div class="sync-panel hidden" id="syncPanel">
-    <div class="sync-row">
+    <div class="sync-main">
+      <div class="sync-summary" id="syncSummary"><span class="star">★</span><span></span></div>
+      <div class="sync-actions-main">
       <button class="sync-btn primary" id="copySyncBtn" onclick="copyFavSyncLink()"></button>
       <button class="sync-btn" id="shareSyncBtn" onclick="shareFavSyncLink()"></button>
+      </div>
     </div>
-    <div class="sync-row">
-      <input class="sync-input" id="syncInput" autocomplete="off">
-      <button class="sync-btn" id="importSyncBtn" onclick="importFavSync()"></button>
+    <div class="sync-import">
+      <button class="sync-import-toggle" id="syncImportToggleBtn" onclick="toggleSyncImport()" aria-expanded="false"></button>
+      <div class="sync-row hidden" id="syncImportBody">
+        <input class="sync-input" id="syncInput" autocomplete="off">
+        <button class="sync-btn" id="importSyncBtn" onclick="importFavSync()"></button>
+      </div>
     </div>
     <div class="sync-msg" id="syncMsg" aria-live="polite"></div>
   </div>
@@ -1081,6 +1099,7 @@ const STR = {
     tipLabel:"시험 포인트 (중요도 상)", revealHint:"카드를 탭하면 정답이 보입니다",
     prev:"◀ 이전", next:"다음 ▶", shuffle:"🔀 섞기",
     sync:"동기화", copySync:"링크 복사", shareSync:"공유", importSync:"가져오기",
+    pasteSync:"링크 붙여넣기", syncCopiedShort:"복사됨", syncSummary:(n)=>"즐겨찾기 <strong>"+n+"</strong>개 링크",
     syncInput:"동기화 링크 붙여넣기", syncCopied:"동기화 링크가 복사되었습니다",
     syncManual:"링크를 선택해 복사하세요", syncShared:"공유 창을 열었습니다",
     syncImported:(n)=>"즐겨찾기 "+n+"개를 가져왔습니다", syncInvalid:"동기화 링크를 확인하세요",
@@ -1097,6 +1116,7 @@ const STR = {
     tipLabel:"考点（重要度·高）", revealHint:"点击卡片查看答案",
     prev:"◀ 上一题", next:"下一题 ▶", shuffle:"🔀 打乱",
     sync:"同步", copySync:"复制链接", shareSync:"分享", importSync:"导入",
+    pasteSync:"粘贴链接", syncCopiedShort:"已复制", syncSummary:(n)=>"<strong>"+n+"</strong> 个收藏链接",
     syncInput:"粘贴同步链接", syncCopied:"同步链接已复制",
     syncManual:"请选择并复制链接", syncShared:"已打开分享窗口",
     syncImported:(n)=>"已导入 "+n+" 个收藏", syncInvalid:"请检查同步链接",
@@ -1158,8 +1178,13 @@ function cleanFavSyncUrl(){
 }
 function refreshSyncInput(){
   const panel=document.getElementById('syncPanel'), input=document.getElementById('syncInput');
+  updateSyncSummary();
   if(!panel||!input||panel.classList.contains('hidden'))return;
   input.value=favSyncUrl();
+}
+function updateSyncSummary(){
+  const el=document.getElementById('syncSummary');if(!el)return;
+  el.innerHTML='<span class="star">★</span><span>'+STR[lang].syncSummary(favSyncList().length)+'</span>';
 }
 function showSyncMsg(text,bad){
   const el=document.getElementById('syncMsg');if(!el)return;
@@ -1190,11 +1215,32 @@ function toggleSyncPanel(){
   panel.classList.toggle('hidden');
   if(!panel.classList.contains('hidden'))refreshSyncInput();
 }
+function setSyncImportOpen(open){
+  const body=document.getElementById('syncImportBody'), btn=document.getElementById('syncImportToggleBtn');
+  if(!body||!btn)return;
+  body.classList.toggle('hidden',!open);
+  btn.setAttribute('aria-expanded',open?'true':'false');
+}
+function toggleSyncImport(){
+  const body=document.getElementById('syncImportBody');
+  setSyncImportOpen(body.classList.contains('hidden'));
+  refreshSyncInput();
+}
+function showCopyDone(){
+  const b=document.getElementById('copySyncBtn');if(!b)return;
+  clearTimeout(window.__copySyncTimer);
+  b.textContent=STR[lang].syncCopiedShort;b.classList.add('done');
+  window.__copySyncTimer=setTimeout(()=>{b.textContent=STR[lang].copySync;b.classList.remove('done');},1400);
+}
 async function copyFavSyncLink(){
   const s=STR[lang], url=favSyncUrl(), input=document.getElementById('syncInput');
-  input.value=url;input.select();
-  try{await navigator.clipboard.writeText(url);showSyncMsg(s.syncCopied);}
-  catch(e){try{document.execCommand('copy');showSyncMsg(s.syncCopied);}catch(err){showSyncMsg(s.syncManual,true);}}
+  input.value=url;
+  try{await navigator.clipboard.writeText(url);showCopyDone();showSyncMsg(s.syncCopied);}
+  catch(e){
+    setSyncImportOpen(true);input.focus();input.select();
+    try{document.execCommand('copy');showCopyDone();showSyncMsg(s.syncCopied);}
+    catch(err){showSyncMsg(s.syncManual,true);}
+  }
 }
 async function shareFavSyncLink(){
   const s=STR[lang], url=favSyncUrl();
@@ -1205,6 +1251,7 @@ function importFavSync(){
   const s=STR[lang], count=applyFavSync(document.getElementById('syncInput').value);
   if(count==null){showSyncMsg(s.syncInvalid,true);return;}
   showSyncMsg(s.syncImported(count));
+  setSyncImportOpen(false);
   refreshSyncInput();
 }
 // --- 매일 학습 기록 (打卡) ---
@@ -1273,8 +1320,10 @@ function applyStrings(){
   tabList.textContent=s.tabList; tabOrig.textContent=s.tabOrig; tabQuiz.textContent=s.tabQuiz;
   search.placeholder=s.search; resetBtn.textContent=s.reset; shuffleBtn.textContent=s.shuffle;
   syncToggleBtn.textContent=s.sync; copySyncBtn.textContent=s.copySync; shareSyncBtn.textContent=s.shareSync;
-  importSyncBtn.textContent=s.importSync; syncInput.placeholder=s.syncInput;
-  shareSyncBtn.style.display=navigator.share?'':'none';
+  syncImportToggleBtn.textContent=s.pasteSync; importSyncBtn.textContent=s.importSync; syncInput.placeholder=s.syncInput;
+  shareSyncBtn.classList.toggle('hidden',!navigator.share);
+  document.querySelector('.sync-actions-main').classList.toggle('one',!navigator.share);
+  updateSyncSummary();
   prevBtn.textContent=s.prev; nextBtn.textContent=s.next; footer.innerHTML=s.footer;
 }
 function fchip(active,val,label){return '<button class="fchip'+(active===val?' on':'')+'" data-val="'+val+'">'+label+'</button>';}
